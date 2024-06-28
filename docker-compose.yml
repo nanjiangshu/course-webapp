@@ -1,0 +1,54 @@
+services:
+
+  shiny-app1: # a dummy server for testing
+    image: shinyapp1:latest
+    build: 
+      context: ./apps/app1
+      dockerfile: Dockerfile
+    volumes:
+      - ./apps/app1/app.R:/usr/src/app/app.R
+    networks:
+      - appnetwork
+    restart: always
+
+  python-bioinfo:
+    image: nginx:latest 
+    networks:
+      - appnetwork
+    volumes:
+      - ./apps/python-programming-bioinfo:/usr/share/nginx/html
+    restart: always
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"  # Add port for SSL
+    volumes:
+      - ${NGINX_CONF:-./nginx/nginx.conf}:/etc/nginx/nginx.conf:ro
+      - ./nginx/.htpasswd-python-bioinfo:/etc/nginx/.htpasswd-python-bioinfo
+      - ./nginx/.htpasswd-app1:/etc/nginx/.htpasswd-app1:ro
+      - ./certbot/etc/letsencrypt:/etc/letsencrypt  # Mount Certbot configuration directory
+      - ./certbot/www/:/var/www/letsencrypt
+    depends_on:
+      - shiny-app1
+      - python-bioinfo 
+    networks:
+      - appnetwork
+    restart: always
+
+  certbot:
+    image: certbot/certbot:latest
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    volumes:
+      - ./certbot/etc/letsencrypt:/etc/letsencrypt
+      - ./certbot/www/:/var/www/letsencrypt
+      - ./certbot/log:/var/log/letsencrypt 
+    networks:
+      - appnetwork
+    depends_on:
+      - nginx
+    restart: always
+
+networks:
+  appnetwork:

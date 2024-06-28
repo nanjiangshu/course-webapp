@@ -1,0 +1,4 @@
+bak
+tmp
+certbot/log/*.log*
+nginx/.htpasswd-python-bioinfo
