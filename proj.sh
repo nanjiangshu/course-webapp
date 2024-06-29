@@ -16,6 +16,7 @@ deploy-with-ssl() {
     if [ "$hostnames" != "$hostname_with_ssl" ]; then # need to create the certificate first
         docker compose -f docker-compose.yml --env-file .env-no-ssl up -d
         certbot_opts=$(echo "$hostnames" | sed 's/ /\ -d\ /g; s/^/-d\ /')
+        echo "docker compose exec certbot certbot certonly --webroot -w /var/www/letsencrypt --agree-tos --no-eff-email --email nanjiang@bioshu.se $certbot_opts"
         docker compose exec certbot certbot certonly --webroot -w /var/www/letsencrypt --agree-tos --no-eff-email --email nanjiang@bioshu.se $certbot_opts
         docker compose stop nginx  
     fi
